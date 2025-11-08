@@ -59,3 +59,11 @@ npm-debug.log*
 # Uploads (user-uploaded files)
 static/uploads/
 uploads/
+
+# Vercel
+.vercel
+
+# Environment files
+.env
+.env.local
+.env.*.local
