@@ -1,12 +1,17 @@
-# Force Python for backend files
+# Force all Python files to be counted as Python
 *.py linguist-language=Python
 
-# Ignore frontend/static assets from language stats
+# Ignore static files, config, HTML, CSS, JS from language stats
 /static/* linguist-vendored
-/api/* linguist-vendored  # optional if you want to ignore serverless scripts
+/api/* linguist-vendored
 /templates/* linguist-vendored
 /public/* linguist-vendored
 /dist/* linguist-vendored
-
-# Optional: Force JS for frontend files if needed
-*.js linguist-language=JavaScript
+*.html linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
+*.json linguist-vendored
+*.bat linguist-vendored
+*.sh linguist-vendored
+*.txt linguist-vendored
+*.md linguist-vendored
