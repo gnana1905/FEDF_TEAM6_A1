@@ -595,12 +595,18 @@ def start_background_checker():
         print("✅ Background event checker started")
 
 # ===== Startup =====
+# Detect serverless environment (Vercel, AWS Lambda, etc.)
+IS_SERVERLESS = os.environ.get('VERCEL') or os.environ.get('AWS_LAMBDA_FUNCTION_NAME') or os.environ.get('FUNCTION_NAME')
+
 # Start background thread when app is imported (for production with gunicorn)
-# This ensures the thread starts even when not running via __main__
-try:
-    start_background_checker()
-except Exception as e:
-    print(f"Warning: Could not start background checker: {e}")
+# Skip in serverless environments (Vercel, Lambda) as background threads don't work there
+if not IS_SERVERLESS:
+    try:
+        start_background_checker()
+    except Exception as e:
+        print(f"Warning: Could not start background checker: {e}")
+else:
+    print("⚠️  Serverless environment detected - background thread disabled")
 
 if __name__ == '__main__':
     print("\n" + "="*50)
