@@ -1,0 +1,12 @@
+# Force Python for backend files
+*.py linguist-language=Python
+
+# Ignore frontend/static assets from language stats
+/static/* linguist-vendored
+/api/* linguist-vendored  # optional if you want to ignore serverless scripts
+/templates/* linguist-vendored
+/public/* linguist-vendored
+/dist/* linguist-vendored
+
+# Optional: Force JS for frontend files if needed
+*.js linguist-language=JavaScript
