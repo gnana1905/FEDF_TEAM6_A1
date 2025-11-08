@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>🌟 ChronoFlow - Your Interactive Timeline</title>
+    <style>
+        /* --- General & Reset Styles --- */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --primary-gradient: linear-gradient(135deg,#ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
+            --timeline-default-bg: var(--primary-gradient);
+            --text-color: #333;
+            --bg-color: white;
+            --card-bg: rgba(255,255,255,0.95);
+            --border-color: rgba(255,255,255,0.22);
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        [data-theme="dark"] {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            --text-color: #f0f0f0;
+            --bg-color: #1a1a1a;
+            --card-bg: rgba(30,30,30,0.95);
+            --border-color: rgba(255,255,255,0.1);
+            --shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            min-height:100vh; color:var(--text-color); line-height:1.6; position:relative; overflow-x:hidden;
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* --- Landing Page Styles --- */
+        .landing-page { display:flex; flex-direction:column; min-height:100vh; text-align:center; color:white; transition:opacity .5s ease-out; }
+        .navbar { display:flex; justify-content:space-between; align-items:center; padding:20px 40px; background:rgba(255,255,255,0.08); backdrop-filter:blur(10px); }
+        .project-title { font-size:2rem; font-weight:bold; background:linear-gradient(135deg,#fff,#e0e0e0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow:2px 2px 5px rgba(0,0,0,0.2); }
+        .nav-links { display:flex; align-items:center; gap:10px; }
+        .nav-links button { color:white; background:none; border:none; font-size:1.05rem; padding:8px 12px; border-radius:20px; cursor:pointer; transition:background .25s ease, transform .25s ease; }
+        .nav-links button:hover { background:rgba(255,255,255,0.12); transform:translateY(-2px); }
+        #user-greeting { color:white; font-weight:bold; margin-right:12px; }
+
+        .hero-section { flex-grow:1; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:20px; }
+        .hero-section h1 { font-size:3.2rem; margin-bottom:18px; text-shadow:3px 3px 8px rgba(0,0,0,0.3); }
+        .hero-section p { font-size:1.15rem; margin-bottom:28px; max-width:640px; }
+        .cta-button { background:linear-gradient(135deg,#667eea 0%, #764ba2 100%); color:white; text-decoration:none; padding:14px 28px; border-radius:40px; font-size:1.05rem; font-weight:700; box-shadow:0 8px 30px rgba(0,0,0,0.18); transition:transform .25s ease, box-shadow .25s ease; }
+        .cta-button:hover { transform:translateY(-4px); box-shadow:0 15px 40px rgba(0,0,0,0.25); }
+
+        /* --- Auth Modals --- */
+        .auth-modal { display:none; position:fixed; z-index:1001; left:50%; top:50%; transform:translate(-50%,-50%); width:92%; max-width:420px; background:var(--card-bg); border-radius:18px; box-shadow:0 30px 80px rgba(0,0,0,0.35); padding:30px 28px; text-align:center; color:var(--text-color); }
+        .auth-modal h2 { color:#667eea; margin-bottom:18px; font-size:1.6rem; }
+        .auth-form { display:flex; flex-direction:column; gap:14px; }
+        .auth-form input { padding:12px; border-radius:10px; border:2px solid #e1e5e9; font-size:1rem; background:var(--bg-color); color:var(--text-color); }
+        .auth-form input:focus { outline:none; border-color:#667eea; box-shadow:0 0 0 4px rgba(102,126,234,0.08); }
+        .auth-form button { background:linear-gradient(135deg,#667eea 0%, #764ba2 100%); color:white; border:none; padding:12px; border-radius:10px; font-weight:700; cursor:pointer; }
+        .auth-form .small { font-size:0.9rem; color:#666; text-align:left; }
+
+        .close-btn { position:absolute; top:14px; right:18px; font-size:1.8rem; color:#aaa; cursor:pointer; transition:color .2s ease; }
+        .close-btn:hover { color:#333; }
+
+        /* --- Timeline App Styles --- */
+        #timeline-app-section { display:none; min-height:100vh; transition:background .4s ease; background-size:cover; background-position:center; }
+
+        /* Animated background with floating particles */
+        body::before {
+            content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(255,107,107,0.28) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(78,205,196,0.26) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(69,183,209,0.18) 0%, transparent 50%);
+            pointer-events:none; z-index:-2;
+        }
+
+        [data-theme="dark"] body::before {
+            background:
+                radial-gradient(circle at 20% 80%, rgba(102,126,234,0.28) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118,75,162,0.26) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(240,147,251,0.18) 0%, transparent 50%);
+        }
+
+        .particles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:-1; }
+        .particle { position:absolute; width:4px; height:4px; background:rgba(255,255,255,0.6); border-radius:50%; animation:float 6s infinite linear; }
+        @keyframes float { 0% { transform:translateY(100vh) rotate(0deg); opacity:0 } 10%{ opacity:1 } 90%{ opacity:1 } 100%{ transform:translateY(-100px) rotate(360deg); opacity:0 } }
+
+        .sparkle { position:absolute; width:6px; height:6px; background:gold; border-radius:50%; pointer-events:none; z-index:999; animation:sparkleFloat 2s ease-out forwards; }
+        @keyframes sparkleFloat { 
+            0% { transform:scale(0) translateY(0); opacity:1; }
+            50% { transform:scale(1) translateY(-20px); opacity:1; }
+            100% { transform:scale(0) translateY(-40px); opacity:0; }
+        }
+
+        .container { max-width:1200px; margin:0 auto; padding:26px; }
+
+        .header { background:var(--card-bg); border-radius:18px; padding:30px; text-align:center; margin-bottom:24px; box-shadow:var(--shadow); position:relative; overflow:hidden; border:1px solid var(--border-color); }
+        .header h1 { color:#667eea; font-size:2.4rem; margin-bottom:8px; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; animation:titleGlow 2s ease-in-out infinite alternate; }
+        @keyframes titleGlow { from { filter:drop-shadow(0 0 5px rgba(102,126,234,0.45)); } to { filter:drop-shadow(0 0 20px rgba(102,126,234,0.85)); } }
+        .header p { color:#666; font-size:1rem; }
+
+        .controls { background:var(--card-bg); border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:var(--shadow); border:1px solid var(--border-color); }
+        .controls h2 { color:#667eea; margin-bottom:14px; text-align:center; font-size:1.4rem; position:relative; }
+        .control-group { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; align-items:flex-start; margin-bottom:14px; }
+        .control-item { display:flex; flex-direction:column; gap:8px; min-width:200px; }
+        .control-item label { font-weight:700; color:#667eea; font-size:0.92rem; }
+        .control-item input, .control-item select, .control-item textarea { padding:10px 12px; border-radius:10px; border:2px solid #e1e5e9; font-size:0.95rem; background:var(--bg-color); color:var(--text-color); }
+        .control-item input:focus, .control-item select:focus, .control-item textarea:focus { outline:none; border-color:#667eea; box-shadow:0 0 0 4px rgba(102,126,234,0.06); transform:translateY(-2px); }
+        .required-field::after { content: " *"; color: #ff6b6b; }
+
+        .btn { background:linear-gradient(135deg,#667eea 0%, #764ba2 100%); color:white; border:none; padding:12px 20px; border-radius:12px; cursor:pointer; font-size:0.98rem; font-weight:700; transition:all .25s ease; }
+        .btn:hover { transform:translateY(-3px); box-shadow:0 8px 25px rgba(102,126,234,0.18); }
+
+        .timeline-container { background:var(--card-bg); border-radius:16px; padding:26px; margin-bottom:28px; box-shadow:var(--shadow); border:1px solid var(--border-color); }
+        .timeline { position:relative; padding:30px 0; }
+        .timeline::before { content:''; position:absolute; left:50%; top:0; bottom:0; width:6px; background:linear-gradient(135deg,#667eea 0%, #764ba2 100%); transform:translateX(-50%); border-radius:3px; box-shadow:0 0 20px rgba(102,126,234,0.28); }
+
+        .timeline-item { position:relative; margin-bottom:46px; opacity:0; transform:translateY(40px); transition:all .7s ease; display:block; }
+        .timeline-item.visible { opacity:1; transform:translateY(0); }
+        .timeline-item:nth-child(odd) { text-align:right; padding-right:60px; }
+        .timeline-item:nth-child(even) { text-align:left; padding-left:60px; }
+        .timeline-content { display:inline-block; width:calc(50% - 80px); background:var(--bg-color); border-radius:14px; padding:18px; box-shadow:var(--shadow); position:relative; border:1px solid var(--border-color); transition:all .3s ease; }
+        .timeline-content:hover { transform:translateY(-6px) scale(1.01); box-shadow:0 14px 40px rgba(0,0,0,0.12); }
+        .timeline-content .media { display:flex; gap:12px; align-items:flex-start; }
+        .timeline-thumb { width:84px; height:64px; object-fit:cover; border-radius:8px; border:1px solid rgba(0,0,0,0.06); box-shadow:0 4px 10px rgba(0,0,0,0.06); }
+        .timeline-main { flex:1; }
+        .timeline-date { color:#667eea; font-weight:800; font-size:1.02rem; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+        .timeline-title { color:var(--text-color); font-size:1.18rem; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .timeline-description { color:#666; line-height:1.6; font-size:0.96rem; margin-bottom:10px; }
+        .timeline-category { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; padding:8px 14px; border-radius:20px; font-size:0.84rem; font-weight:700; box-shadow:0 6px 18px rgba(102,126,234,0.12); }
+
+        .delete-btn, .edit-btn { position:absolute; top:12px; width:34px; height:34px; border:none; border-radius:50%; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transform:scale(.85); transition:all .22s ease; }
+        .delete-btn { right:12px; background:#ff6b6b; color:white; }
+        .edit-btn { right:52px; background:#4ecdc4; color:white; }
+        .timeline-content:hover .delete-btn, .timeline-content:hover .edit-btn { opacity:1; transform:scale(1); }
+        .delete-btn:hover { background:#ee5a52; transform:scale(1.05) rotate(7deg); }
+        .edit-btn:hover { background:#45b7d1; transform:scale(1.05) rotate(-7deg); }
+
+        .filters, .stats { background:var(--card-bg); border-radius:16px; padding:18px; margin-bottom:20px; box-shadow:var(--shadow); border:1px solid var(--border-color); }
+        .filter-buttons { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+        .filter-btn { background:#f8f9fa; color:#666; border:2px solid #e9ecef; padding:10px 16px; border-radius:20px; cursor:pointer; font-weight:700; }
+        .filter-btn.active { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-color:#667eea; box-shadow:0 8px 20px rgba(102,126,234,0.12); }
+
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+        .stat-item { text-align:center; padding:16px; background:var(--bg-color); border-radius:12px; box-shadow:var(--shadow); border:1px solid var(--border-color); }
+        .stat-number { font-size:2.1rem; font-weight:900; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
+        .stat-label { color:#666; font-weight:700; }
+
+        .notification { position:fixed; top:20px; right:20px; color:white; padding:16px 20px; border-radius:14px; z-index:1002; animation:slideIn .45s ease-out forwards; font-weight:800; max-width:400px; box-shadow:0 12px 30px rgba(0,0,0,0.2); display:flex; align-items:center; gap:12px; }
+        .notification-icon { font-size:1.5rem; flex-shrink:0; }
+        .notification-content { flex:1; }
+        .notification-title { font-size:1.1rem; margin-bottom:4px; font-weight:900; }
+        .notification-message { font-size:0.95rem; opacity:0.9; line-height:1.4; }
+        @keyframes slideIn { from { transform:translateX(120%); opacity:0 } to { transform:translateX(0); opacity:1 } }
+        .notification.fade-out { animation:slideOut .45s ease-in forwards; }
+        @keyframes slideOut { from { transform:translateX(0); opacity:1 } to { transform:translateX(120%); opacity:0 } }
+
+        .reminder-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card-bg); padding:28px; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.28); z-index:1003; max-width:460px; text-align:center; width:90%; color:var(--text-color); }
+        .reminder-modal-image { max-width:100%; max-height:200px; border-radius:12px; margin-bottom:16px; object-fit:cover; }
+        .modal-btn { background:linear-gradient(135deg,#667eea,#764ba2); color:white; border:none; padding:12px 24px; border-radius:10px; cursor:pointer; font-weight:800; margin-top:16px; }
+
+        .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:1000; }
+
+        /* Theme Toggle - Non-intrusive placement */
+        .theme-toggle { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            z-index: 1000; 
+            background: var(--card-bg); 
+            border: 2px solid var(--border-color);
+            border-radius: 50px; 
+            padding: 12px; 
+            cursor: pointer; 
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+        .theme-toggle:hover { transform: scale(1.1); }
+        .theme-toggle .icon { 
+            font-size: 1.5rem; 
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Background Controls */
+        .background-controls { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .bg-control-btn { 
+            background: var(--card-bg); 
+            border: 2px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .bg-control-btn:hover { 
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Visualization Graph */
+        .visualization-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+        .chart-bar {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 250px;
+            margin-top: 20px;
+            padding: 0 20px;
+        }
+        .chart-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 12%;
+        }
+        .chart-bar-fill {
+            width: 80%;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s ease;
+        }
+        .chart-label {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: center;
+        }
+        .chart-value {
+            font-size: 0.7rem;
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        /* Timeline Visualization */
+        .timeline-visualization {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            margin-top: 20px;
+        }
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        .timeline-point {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #667eea;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+        }
+        .timeline-point:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            box-shadow: 0 0 0 8px rgba(102, 126, 234, 0.3);
+        }
+        .timeline-point.active {
+            background: #ff6b6b;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+        .timeline-tooltip {
+            position: absolute;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            max-width: 200px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .timeline-tooltip.show {
+            opacity: 1;
+        }
+
+        /* Confirmation Modal */
+        .confirmation-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 1004;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            color: var(--text-color);
+        }
+        .confirmation-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .confirm-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .confirm-yes {
+            background: #ff6b6b;
+            color: white;
+        }
+        .confirm-no {
+            background: #e9ecef;
+            color: #333;
+        }
+        .confirm-yes:hover {
+            background: #ee5a52;
+            transform: translateY(-2px);
+        }
+        .confirm-no:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        /* Edit Event Modal */
+        .edit-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 28px;
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+            z-index: 1004;
+            max-width: 500px;
+            width: 90%;
+            color: var(--text-color);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .edit-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .edit-form-group label {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 0.92rem;
+        }
+        .edit-form-group input, .edit-form-group select, .edit-form-group textarea {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 2px solid #e1e5e9;
+            font-size: 0.95rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+        }
+        .edit-form-group input:focus, .edit-form-group select:focus, .edit-form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.06);
+        }
+        .edit-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .save-edit-btn {
+            background: linear-gradient(135deg,#4ecdc4,#45b7d1);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 800;
+        }
+        .cancel-edit-btn {
+            background: #e9ecef;
+            color: #333;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 800;
+        }
+        .save-edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(78,205,196,0.2);
+        }
+        .cancel-edit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width:900px) {
+            .timeline-content { width: calc(100% - 110px); }
+            .timeline-item:nth-child(odd), .timeline-item:nth-child(even) { text-align:left; padding-left:70px; padding-right:20px; }
+            .timeline::before { left:30px; }
+            .timeline-item:nth-child(odd)::before, .timeline-item:nth-child(even)::before { left:15px; }
+            .notification { left:20px; right:20px; max-width:none; }
+        }
+
+        .animation-trigger { animation:bounce .65s ease-in-out; }
+        @keyframes bounce { 0%,20%,50%,80%,100% { transform:translateY(0) } 40% { transform:translateY(-8px) } 60% { transform:translateY(-4px) } }
+        .sound-trigger { animation:soundWave 1s ease-out; }
+        @keyframes soundWave { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .navbar { padding:15px 20px; }
+            .project-title { font-size:1.5rem; }
+            .hero-section h1 { font-size:2.2rem; }
+            .control-group { flex-direction:column; }
+            .control-item { min-width:auto; width:100%; }
+            .timeline-content { width: calc(100% - 80px); }
+            .theme-toggle { 
+                bottom: 15px;
+                right: 15px;
+                padding: 10px;
+            }
+            .nav-links { flex-wrap: wrap; justify-content: center; }
+            .background-controls { flex-direction: column; }
+            .bg-control-btn { width: 100%; text-align: center; }
+            .delete-btn, .edit-btn { opacity: 1; transform: scale(1); }
+            .chart-bar { padding: 0 10px; }
+            .chart-column { width: 14%; }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            .header { padding: 20px; }
+            .controls, .timeline-container { padding: 15px; }
+            .hero-section h1 { font-size: 1.8rem; }
+            .header h1 { font-size: 1.8rem; }
+            .theme-toggle {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px;
+            }
+            .chart-column { width: 16%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Theme Toggle - Bottom right corner, non-intrusive -->
+    <div class="theme-toggle" id="themeToggle" title="Toggle dark/light mode">
+        <div class="icon">🌙</div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="auth-modal" aria-hidden="true">
+        <span class="close-btn" data-modal="login-modal">&times;</span>
+        <h2>Welcome Back!</h2>
+        <form id="login-form" class="auth-form">
+            <input type="email" id="login-email" placeholder="Email" required />
+            <input type="password" id="login-password" placeholder="Password" required />
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button type="submit">Login</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SIGNUP MODAL -->
+    <div id="signup-modal" class="auth-modal" aria-hidden="true">
+        <span class="close-btn" data-modal="signup-modal">&times;</span>
+        <h2>Join ChronoFlow</h2>
+        <form id="signup-form" class="auth-form">
+            <input type="text" id="signup-username" placeholder="Choose a username" required />
+            <input type="email" id="signup-email" placeholder="Email" required />
+            <input type="password" id="signup-password" placeholder="Choose a password" required />
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button type="submit">Sign Up</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- LANDING -->
+    <div id="landing-page" class="landing-page">
+        <nav class="navbar">
+            <div class="project-title">🌟 ChronoFlow</div>
+            <div class="nav-links" id="nav-links">
+                <button data-action="login">Login</button>
+                <button data-action="signup">Sign Up</button>
+            </div>
+        </nav>
+
+        <main class="hero-section">
+            <h1>Create Your Interactive Timeline</h1>
+            <p>Visually organize your projects, memories, and milestones with a beautiful, dynamic, and easy-to-use timeline creator.</p>
+            <a href="#" id="cta-button" class="cta-button">Get Started</a>
+        </main>
+    </div>
+
+    <!-- APP -->
+    <div id="timeline-app-section" role="application" aria-hidden="true">
+        <div class="particles" id="particles"></div>
+
+        <div class="container">
+            <div class="header">
+                <h1>🌟 ChronoFlow</h1>
+                <p>Interactive Timeline with Custom Event Triggers & Media</p>
+            </div>
+
+            <div class="controls" aria-label="event controls">
+                <h2 style="width:100%;">Add New Event</h2>
+
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="eventDate" class="required-field">📅 Date:</label>
+                        <input type="date" id="eventDate" />
+                    </div>
+                    <div class="control-item">
+                        <label for="eventTime">⏰ Time (optional):</label>
+                        <input type="time" id="eventTime" step="1" />
+                    </div>
+
+                    <div class="control-item">
+                        <label for="eventTitle" class="required-field">📝 Title:</label>
+                        <input type="text" id="eventTitle" placeholder="Event title" maxlength="100" />
+                        <small style="color:#666; font-size:0.8rem;">Max 100 characters</small>
+                    </div>
+
+                    <div class="control-item">
+                        <label for="eventCategory" class="required-field">🏷️ Category:</label>
+                        <select id="eventCategory">
+                            <option value="">Select category</option>
+                            <option value="work">💼 Work</option>
+                            <option value="personal">👤 Personal</option>
+                            <option value="school">🎓 School</option>
+                            <option value="milestone">🎯 Milestone</option>
+                            <option value="achievement">🏆 Achievement</option>
+                            <option value="innovation">💡 Innovation</option>
+                            <option value="discovery">🔍 Discovery</option>
+                            <option value="launch">🚀 Launch</option>
+                            <option value="birthday">🎂 Birthday</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-item" style="flex:1;">
+                        <label for="eventDescription" class="required-field">📄 Description:</label>
+                        <textarea id="eventDescription" placeholder="Event description" rows="3" maxlength="500"></textarea>
+                        <small style="color:#666; font-size:0.8rem;">Max 500 characters</small>
+                    </div>
+
+                    <div class="control-item">
+                        <label for="eventPhoto">🖼️ Attach Photo (optional):</label>
+                        <input type="file" id="eventPhoto" accept="image/*" />
+                        <small style="color:#666;">Photo will be saved locally for your account.</small>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="eventReminder">🔔 Reminder:</label>
+                        <select id="eventReminder">
+                            <option value="none">No reminder</option>
+                            <option value="popup">Show popup</option>
+                            <option value="sound">Play sound</option>
+                            <option value="both">Popup + Sound</option>
+                        </select>
+                    </div>
+
+                    <div class="control-item" id="soundTypeContainer" style="display:none;">
+                        <label for="soundType">🎵 Select Sound Type:</label>
+                        <select id="soundType">
+                            <option value="none">🔇 No Sound</option>
+                            <option value="default">🔔 Default Tone</option>
+                            <option value="chime">✨ Soft Chime</option>
+                            <option value="beep">📢 Beep Alert</option>
+                            <option value="bell">🛎️ Bell Ring</option>
+                            <option value="birthday">🎂 Birthday Song</option>
+                        </select>
+                        <button type="button" id="previewSoundBtn" class="bg-control-btn" style="margin-top:8px;">
+                            ▶️ Preview Sound
+                        </button>
+                        <small style="color:#666;">Sound will play if reminder is set as "Sound" or "Both".</small>
+                    </div>
+
+                    <div class="control-item">
+                        <label for="backgroundColorPicker">🎨 Timeline Background Color (optional):</label>
+                        <input type="color" id="backgroundColorPicker" value="#ffffff" />
+                        <div class="background-controls">
+                            <button type="button" class="bg-control-btn" id="resetBgColor">Reset to Default</button>
+                            <button type="button" class="bg-control-btn" id="applyBgColor">Apply Color</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group" style="justify-content:center;">
+                    <button class="btn" id="addEventBtn">✨ Add Event</button>
+                    <button class="btn" id="clearFormBtn" style="background:#ff6b6b;">🗑️ Clear Form</button>
+                    <button class="btn" id="generateSampleBtn">🎲 Load Sample Events</button>
+                    <button class="btn" id="showVisualizationBtn">📊 Show Visualization</button>
+                </div>
+            </div>
+
+            <div class="visualization-container" id="visualizationContainer" style="display:none;">
+                <h2>📊 Events Visualization</h2>
+                <div class="chart-container">
+                    <div class="chart-bar" id="chartBar"></div>
+                </div>
+                <div class="timeline-visualization" id="timelineVisualization">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-tooltip" id="timelineTooltip"></div>
+                </div>
+            </div>
+
+            <div class="filters">
+                <h2>Filter Events</h2>
+                <div class="filter-buttons" role="toolbar" aria-label="filters">
+                    <button class="filter-btn active" data-filter="all">🌟 All Events</button>
+                    <button class="filter-btn" data-filter="work">💼 Work</button>
+                    <button class="filter-btn" data-filter="personal">👤 Personal</button>
+                    <button class="filter-btn" data-filter="school">🎓 School</button>
+                    <button class="filter-btn" data-filter="milestone">🎯 Milestones</button>
+                    <button class="filter-btn" data-filter="achievement">🏆 Achievements</button>
+                    <button class="filter-btn" data-filter="innovation">💡 Innovations</button>
+                    <button class="filter-btn" data-filter="launch">🚀 Launches</button>
+                    <button class="filter-btn" data-filter="birthday">🎂 Birthdays</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <h2>📊 Timeline Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalEvents">0</div>
+                        <div class="stat-label">Total Events</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="workCount">0</div>
+                        <div class="stat-label">Work Events</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="personalCount">0</div>
+                        <div class="stat-label">Personal Events</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="schoolCount">0</div>
+                        <div class="stat-label">School Events</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="birthdayCount">0</div>
+                        <div class="stat-label">Birthdays</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-container">
+                <h2 style="color:#667eea; text-align:center; margin-bottom:18px; font-size:1.25rem;">📅 Timeline Events</h2>
+                <div class="timeline" id="timeline"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Request notification permission on load
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+            
+            // Enhanced system notification function with image support
+            function systemNotification(title, body, imageUrl = null) {
+                if (Notification.permission === "granted") {
+                    const options = { 
+                        body,
+                        icon: imageUrl || "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+                        badge: "https://cdn-icons-png.flaticon.com/512/190/190411.png",
+                        tag: "chronoflow-reminder",
+                        requireInteraction: true
+                    };
+                    
+                    // For mobile PWA support
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification(title, options);
+                        });
+                    } else {
+                        new Notification(title, options);
+                    }
+                }
+            }
+
+            /* ------------------------
+               Application State & API Configuration
+            ------------------------ */
+            const API_BASE_URL = window.location.origin || 'http://localhost:5000';
+            
+            let state = {
+                currentUser: null,    // stores logged-in user's email
+                profile: null,        // { email, username, _id }
+                token: null,          // JWT token for API authentication
+                events: [],           // current user's events
+                currentFilter: 'all',
+                currentTheme: localStorage.getItem('chrono_theme') || 'light',
+                userSettings: JSON.parse(localStorage.getItem('chrono_userSettings') || '{}'),
+                editingEventId: null  // ID of event being edited (from API)
+            };
+            
+            /* ------------------------
+               API Helper Functions
+            ------------------------ */
+            async function apiCall(endpoint, method = 'GET', data = null) {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (state.token) {
+                    options.headers['Authorization'] = `Bearer ${state.token}`;
+                }
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.message || 'API request failed');
+                    }
+                    
+                    return result;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    throw error;
+                }
+            }
+
+            /* ------------------------
+               DOM Elements
+            ------------------------ */
+            const landingPage = document.getElementById('landing-page');
+            const timelineAppSection = document.getElementById('timeline-app-section');
+            const navLinks = document.getElementById('nav-links');
+            const ctaButton = document.getElementById('cta-button');
+            const overlay = document.getElementById('overlay');
+            const loginModal = document.getElementById('login-modal');
+            const signupModal = document.getElementById('signup-modal');
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const timeline = document.getElementById('timeline');
+            const addEventBtn = document.getElementById('addEventBtn');
+            const clearFormBtn = document.getElementById('clearFormBtn');
+            const generateSampleBtn = document.getElementById('generateSampleBtn');
+            const showVisualizationBtn = document.getElementById('showVisualizationBtn');
+            const visualizationContainer = document.getElementById('visualizationContainer');
+            const eventPhotoInput = document.getElementById('eventPhoto');
+            const bgColorPicker = document.getElementById('backgroundColorPicker');
+            const resetBgColorBtn = document.getElementById('resetBgColor');
+            const applyBgColorBtn = document.getElementById('applyBgColor');
+            const themeToggle = document.getElementById('themeToggle');
+            const previewSoundBtn = document.getElementById('previewSoundBtn');
+            const eventReminder = document.getElementById('eventReminder');
+            const soundTypeContainer = document.getElementById('soundTypeContainer');
+            const chartBar = document.getElementById('chartBar');
+            const timelineVisualization = document.getElementById('timelineVisualization');
+            const timelineTooltip = document.getElementById('timelineTooltip');
+
+            /* ------------------------
+               Enhanced Sample Events
+            ------------------------ */
+            const sampleEvents = [
+                { 
+                    date: '2025-11-04', 
+                    time: '09:00:00', 
+                    title: 'Final Review', 
+                    category: 'milestone', 
+                    description: 'Final review of the project before submission', 
+                    reminder: 'popup', 
+                    color: 'blue', 
+                    photo: null, 
+                    triggered: false 
+                },
+                { 
+                    date: '2025-10-29', 
+                    time: '14:00:00', 
+                    title: 'ChronoFlow Add Features', 
+                    category: 'innovation', 
+                    description: 'Adding new features to ChronoFlow timeline application', 
+                    reminder: 'both', 
+                    color: 'purple', 
+                    photo: null, 
+                    triggered: false 
+                },
+                { 
+                    date: '2025-10-08', 
+                    time: '10:00:00', 
+                    title: 'Insem 1 Lab Exams Start', 
+                    category: 'school', 
+                    description: 'Beginning of internal semester 1 laboratory examinations', 
+                    reminder: 'sound', 
+                    color: 'green', 
+                    photo: null, 
+                    triggered: false 
+                },
+                { 
+                    date: '2025-11-10', 
+                    time: '09:30:00', 
+                    title: 'Insem 2 Theory Exams', 
+                    category: 'school', 
+                    description: 'Internal semester 2 theory examinations commence', 
+                    reminder: 'popup', 
+                    color: 'orange', 
+                    photo: null, 
+                    triggered: false 
+                },
+                { 
+                    date: '2025-11-25', 
+                    time: '00:00:00', 
+                    title: 'My Birthday', 
+                    category: 'birthday', 
+                    description: 'Happy Birthday to me! 🎂🎉', 
+                    reminder: 'both', 
+                    color: 'red', 
+                    photo: null, 
+                    triggered: false 
+                }
+            ];
+
+            /* ------------------------
+               Theme Management
+            ------------------------ */
+            function initializeTheme() {
+                document.documentElement.setAttribute('data-theme', state.currentTheme);
+                updateThemeToggle();
+            }
+
+            function toggleTheme() {
+                state.currentTheme = state.currentTheme === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', state.currentTheme);
+                localStorage.setItem('chrono_theme', state.currentTheme);
+                updateThemeToggle();
+                createSparkles(20); // Add sparkles when changing theme
+                showNotification(
+                    `${state.currentTheme === 'dark' ? 'Dark' : 'Light'} mode activated!`,
+                    'success',
+                    'Theme Changed',
+                    state.currentTheme === 'dark' ? '🌙' : '☀️'
+                );
+            }
+
+            function updateThemeToggle() {
+                const icon = themeToggle.querySelector('.icon');
+                icon.textContent = state.currentTheme === 'dark' ? '☀️' : '🌙';
+                themeToggle.title = `Switch to ${state.currentTheme === 'dark' ? 'light' : 'dark'} mode`;
+            }
+
+            themeToggle.addEventListener('click', toggleTheme);
+
+            /* ------------------------
+               User Settings Management
+            ------------------------ */
+            function applyUserSettings() {
+                if (state.currentUser && state.userSettings[state.currentUser]) {
+                    const settings = state.userSettings[state.currentUser];
+                    if (settings.soundType && document.getElementById('soundType')) {
+                        document.getElementById('soundType').value = settings.soundType;
+                    }
+                }
+            }
+
+            function saveUserSettings() {
+                if (state.currentUser) {
+                    const soundType = document.getElementById('soundType') ? document.getElementById('soundType').value : 'default';
+                    state.userSettings[state.currentUser] = { soundType };
+                    localStorage.setItem('chrono_userSettings', JSON.stringify(state.userSettings));
+                }
+            }
+
+            /* ------------------------
+               Enhanced Sound System
+            ------------------------ */
+            function playSound(preview = false, isBirthday = false) {
+                const soundSelect = document.getElementById('soundType');
+                let soundType = soundSelect ? soundSelect.value : (state.currentUser && state.userSettings[state.currentUser] ? state.userSettings[state.currentUser].soundType : 'default');
+                
+                // Override for birthday events
+                if (isBirthday) {
+                    soundType = 'birthday';
+                }
+
+                // Check if sound is disabled
+                if (soundType === 'none') {
+                    if (preview) {
+                        showNotification('Sound is disabled', 'info', 'Sound Preview');
+                    }
+                    return;
+                }
+
+                // Save user preference
+                if (state.currentUser && soundSelect && !isBirthday) {
+                    saveUserSettings();
+                }
+
+                let freq = 440;
+                let duration = 1;
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                switch (soundType) {
+                    case 'chime':
+                        osc.type = 'sine';
+                        freq = 523.25;
+                        duration = 1.2;
+                        break;
+                    case 'beep':
+                        osc.type = 'square';
+                        freq = 880;
+                        duration = 0.8;
+                        break;
+                    case 'bell':
+                        osc.type = 'triangle';
+                        freq = 659.25;
+                        duration = 1.5;
+                        break;
+                    case 'birthday':
+                        // Play a simple birthday melody
+                        playBirthdayMelody(audioCtx);
+                        if (preview) {
+                            showNotification(`Previewing birthday song 🎂`, 'info', 'Sound Preview');
+                        }
+                        return;
+                    default:
+                        osc.type = 'sine';
+                        freq = 440;
+                        duration = 1;
+                }
+
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+
+                if (preview) {
+                    showNotification(`Previewing ${soundType} sound 🔊`, 'info', 'Sound Preview');
+                }
+            }
+
+            // Simple birthday melody
+            function playBirthdayMelody(audioCtx) {
+                const notes = [
+                    {freq: 523.25, duration: 0.3}, // C5
+                    {freq: 523.25, duration: 0.3}, // C5
+                    {freq: 587.33, duration: 0.6}, // D5
+                    {freq: 523.25, duration: 0.6}, // C5
+                    {freq: 698.46, duration: 0.6}, // F5
+                    {freq: 659.25, duration: 1.2}  // E5
+                ];
+                
+                let currentTime = audioCtx.currentTime;
+                
+                notes.forEach(note => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    
+                    osc.frequency.setValueAtTime(note.freq, currentTime);
+                    gain.gain.setValueAtTime(0.3, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, currentTime + note.duration);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + note.duration);
+                    
+                    currentTime += note.duration;
+                });
+            }
+
+            // Sound preview button
+            previewSoundBtn.addEventListener('click', () => {
+                playSound(true);
+            });
+
+            // Show/hide sound options based on reminder selection
+            eventReminder.addEventListener('change', function() {
+                if (this.value === 'sound' || this.value === 'both') {
+                    soundTypeContainer.style.display = 'flex';
+                } else {
+                    soundTypeContainer.style.display = 'none';
+                }
+            });
+
+            /* ------------------------
+               Sparkle Animation
+            ------------------------ */
+            function createSparkles(count = 15) {
+                for (let i = 0; i < count; i++) {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    
+                    // Random position
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight;
+                    
+                    sparkle.style.left = `${x}px`;
+                    sparkle.style.top = `${y}px`;
+                    
+                    // Random delay
+                    sparkle.style.animationDelay = `${Math.random() * 0.5}s`;
+                    
+                    document.body.appendChild(sparkle);
+                    
+                    // Remove sparkle after animation
+                    setTimeout(() => {
+                        sparkle.remove();
+                    }, 2000);
+                }
+            }
+
+            /* ------------------------
+               Enhanced Notification System
+            ------------------------ */
+            function showNotification(message, type = 'success', title = null, icon = null) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                
+                const icons = {
+                    success: '✅',
+                    error: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️',
+                    reminder: '🔔',
+                    birthday: '🎂'
+                };
+
+                const styles = {
+                    success: 'linear-gradient(135deg,#56ab2f 0%, #a8e6cf 100%)',
+                    error: 'linear-gradient(135deg,#ff6b6b 0%, #ee5a52 100%)',
+                    warning: 'linear-gradient(135deg,#ffa726 0%, #ff9800 100%)',
+                    info: 'linear-gradient(135deg,#667eea 0%, #764ba2 100%)',
+                    reminder: 'linear-gradient(135deg,#ff6b6b 0%, #ff8e53 100%)',
+                    birthday: 'linear-gradient(135deg,#ff6b6b 0%, #ff8e53 100%)'
+                };
+
+                notification.style.background = styles[type] || styles.info;
+                
+                const notificationIcon = icon || icons[type] || icons.info;
+                const notificationTitle = title || 
+                    (type === 'success' ? 'Success!' : 
+                     type === 'error' ? 'Error' : 
+                     type === 'warning' ? 'Warning' : 
+                     type === 'reminder' ? 'Reminder' : 
+                     type === 'birthday' ? 'Birthday!' : 'Information');
+
+                notification.innerHTML = `
+                    <div class="notification-icon">${notificationIcon}</div>
+                    <div class="notification-content">
+                        <div class="notification-title">${notificationTitle}</div>
+                        <div class="notification-message">${message}</div>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.classList.add('fade-out');
+                    notification.addEventListener('animationend', () => notification.remove());
+                }, 4000);
+            }
+
+            /* ------------------------
+               Form Validation Helper
+            ------------------------ */
+            function validateEventForm(date, title, category, description) {
+                const missingFields = [];
+                
+                if (!date) missingFields.push('Date');
+                if (!title) missingFields.push('Title');
+                if (!category) missingFields.push('Category');
+                if (!description) missingFields.push('Description');
+                
+                if (missingFields.length > 0) {
+                    const fieldList = missingFields.join(', ');
+                    showNotification(
+                        `Please fill in the following required fields: ${fieldList}`,
+                        'error',
+                        'Missing Information',
+                        '📝'
+                    );
+                    return false;
+                }
+                
+                // Check character limits
+                if (title.length > 100) {
+                    showNotification(
+                        'Title must be 100 characters or less',
+                        'error',
+                        'Title Too Long',
+                        '📝'
+                    );
+                    return false;
+                }
+                
+                if (description.length > 500) {
+                    showNotification(
+                        'Description must be 500 characters or less',
+                        'error',
+                        'Description Too Long',
+                        '📝'
+                    );
+                    return false;
+                }
+                
+                return true;
+            }
+
+            /* ------------------------
+               Modal helpers
+            ------------------------ */
+            const showModal = (modalEl) => {
+                overlay.style.display = 'block';
+                modalEl.style.display = 'block';
+            };
+            const hideModals = () => {
+                overlay.style.display = 'none';
+                loginModal.style.display = 'none';
+                signupModal.style.display = 'none';
+            };
+
+            document.querySelectorAll('.close-btn').forEach(btn => {
+                btn.addEventListener('click', hideModals);
+            });
+            overlay.addEventListener('click', hideModals);
+
+            /* ------------------------
+               NAV UI update
+            ------------------------ */
+            function updateNavUI() {
+                if (state.currentUser && state.profile) {
+                    navLinks.innerHTML = `
+                        <span id="user-greeting">👋 ${escapeHtml(state.profile.username)} (${escapeHtml(state.profile.email)})</span>
+                        <button data-action="logout">Logout</button>
+                    `;
+                } else {
+                    navLinks.innerHTML = `
+                        <button data-action="login">Login</button>
+                        <button data-action="signup">Sign Up</button>
+                    `;
+                }
+            }
+
+            /* ------------------------
+               Escaping (small helper)
+            ------------------------ */
+            function escapeHtml(s = '') {
+                return String(s)
+                    .replaceAll('&','&amp;')
+                    .replaceAll('<','&lt;')
+                    .replaceAll('>','&gt;')
+                    .replaceAll('"','&quot;')
+                    .replaceAll("'",'&#039;');
+            }
+
+            /* ------------------------
+               Auth: Signup & Login using API
+            ------------------------ */
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('signup-username').value.trim();
+                const email = document.getElementById('signup-email').value.trim().toLowerCase();
+                const password = document.getElementById('signup-password').value;
+
+                if (!username || !email || !password) {
+                    showNotification('Please fill all sign-up fields.', 'error', 'Sign Up Failed', '❌');
+                    return;
+                }
+
+                try {
+                    const result = await apiCall('/api/signup', 'POST', { username, email, password });
+                    state.token = result.token;
+                    state.profile = result.user;
+                    state.currentUser = result.user.email;
+                    
+                    localStorage.setItem('chrono_token', result.token);
+                    localStorage.setItem('chrono_user', JSON.stringify(result.user));
+                    
+                    // Notify service worker of new token
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'STORE_USER',
+                            token: result.token
+                        });
+                    }
+                    
+                    showNotification('Account created! Welcome!', 'success', 'Welcome!', '🎉');
+                    hideModals();
+                    switchToAppView();
+                } catch (error) {
+                    showNotification(error.message || 'Signup failed. Please try again.', 'error', 'Sign Up Failed', '❌');
+                }
+            });
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value.trim().toLowerCase();
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const result = await apiCall('/api/login', 'POST', { email, password });
+                    state.token = result.token;
+                    state.profile = result.user;
+                    state.currentUser = result.user.email;
+                    
+                    localStorage.setItem('chrono_token', result.token);
+                    localStorage.setItem('chrono_user', JSON.stringify(result.user));
+                    
+                    // Notify service worker of new token
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({
+                            type: 'STORE_USER',
+                            token: result.token
+                        });
+                    }
+                    
+                    showNotification(`Welcome back, ${result.user.username}!`, 'success', 'Welcome Back!', '👋');
+                    hideModals();
+                    switchToAppView();
+                } catch (error) {
+                    showNotification(error.message || 'Invalid email or password.', 'error', 'Login Failed', '🔒');
+                }
+            });
+
+            // Nav click handlers (login/signup/logout)
+            navLinks.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') return;
+                const action = e.target.dataset.action;
+                if (action === 'login') showModal(loginModal);
+                if (action === 'signup') showModal(signupModal);
+                if (action === 'logout') handleLogout();
+            });
+
+            /* ------------------------
+               Logout
+            ------------------------ */
+            async function handleLogout() {
+                try {
+                    if (state.token) {
+                        await apiCall('/api/logout', 'POST');
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                
+                state.currentUser = null;
+                state.profile = null;
+                state.token = null;
+                state.events = [];
+                
+                localStorage.removeItem('chrono_token');
+                localStorage.removeItem('chrono_user');
+                sessionStorage.removeItem('chrono_currentUser');
+                
+                showNotification('You have been logged out.', 'info', 'Goodbye!', '👋');
+                switchToLandingView();
+            }
+
+            /* ------------------------
+               Switch Views
+            ------------------------ */
+            function switchToAppView() {
+                landingPage.style.display = 'none';
+                timelineAppSection.style.display = 'block';
+                updateNavUI();
+                initializeTimelineApp();
+                applyUserSettings();
+            }
+            function switchToLandingView() {
+                landingPage.style.display = 'flex';
+                timelineAppSection.style.display = 'none';
+                // clear background to default gradient for landing
+                document.getElementById('timeline-app-section').style.backgroundImage = '';
+                document.getElementById('timeline-app-section').style.background = '';
+                updateNavUI();
+            }
+
+            /* ------------------------
+               Check login on load
+            ------------------------ */
+            async function checkLoginStatus() {
+                const token = localStorage.getItem('chrono_token');
+                const userStr = localStorage.getItem('chrono_user');
+                
+                if (token && userStr) {
+                    try {
+                        state.token = token;
+                        state.profile = JSON.parse(userStr);
+                        state.currentUser = state.profile.email;
+                        
+                        // Verify token is still valid
+                        const result = await apiCall('/api/me', 'GET');
+                        state.profile = result.user;
+                        
+                        switchToAppView();
+                        return;
+                    } catch (error) {
+                        // Token expired or invalid, clear storage
+                        localStorage.removeItem('chrono_token');
+                        localStorage.removeItem('chrono_user');
+                        state.token = null;
+                        state.profile = null;
+                    }
+                }
+                switchToLandingView();
+            }
+
+            /* ------------------------
+               Data persistence via API
+            ------------------------ */
+            function bgKey(email) { return `chrono_bg_${email}`; }
+
+            async function loadEventsFromAPI() {
+                if (!state.currentUser || !state.token) return;
+                
+                try {
+                    const result = await apiCall('/api/events', 'GET');
+                    state.events = result.events || [];
+                    
+                    // Ensure all events have the triggered field
+                    state.events.forEach(event => {
+                        if (event.triggered === undefined) {
+                            event.triggered = false;
+                        }
+                    });
+                    
+                    // Sort events by date
+                    state.events.sort((a, b) => new Date(a.date) - new Date(b.date));
+                } catch (error) {
+                    console.error('Failed to load events:', error);
+                    showNotification('Failed to load events from server.', 'error', 'Load Error', '💾');
+                    state.events = [];
+                }
+            }
+
+            async function saveEventToAPI(eventData) {
+                if (!state.token) {
+                    throw new Error('Not authenticated');
+                }
+                
+                try {
+                    const result = await apiCall('/api/events', 'POST', eventData);
+                    return result.event;
+                } catch (error) {
+                    console.error('Failed to save event:', error);
+                    throw error;
+                }
+            }
+
+            async function updateEventInAPI(eventId, eventData) {
+                if (!state.token) {
+                    throw new Error('Not authenticated');
+                }
+                
+                try {
+                    const result = await apiCall(`/api/events/${eventId}`, 'PUT', eventData);
+                    return result.event;
+                } catch (error) {
+                    console.error('Failed to update event:', error);
+                    throw error;
+                }
+            }
+
+            async function deleteEventFromAPI(eventId) {
+                if (!state.token) {
+                    throw new Error('Not authenticated');
+                }
+                
+                try {
+                    await apiCall(`/api/events/${eventId}`, 'DELETE');
+                } catch (error) {
+                    console.error('Failed to delete event:', error);
+                    throw error;
+                }
+            }
+
+            /* ------------------------
+               Particles
+            ------------------------ */
+            function createParticles() {
+                const particlesContainer = document.getElementById('particles');
+                if (!particlesContainer.hasChildNodes()) {
+                    for (let i = 0; i < 50; i++) {
+                        const particle = document.createElement('div');
+                        particle.className = 'particle';
+                        particle.style.left = Math.random() * 100 + '%';
+                        particle.style.top = Math.random() * 100 + 'vh';
+                        particle.style.animationDelay = Math.random() * 6 + 's';
+                        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                        particlesContainer.appendChild(particle);
+                    }
+                }
+            }
+
+            /* ------------------------
+               Initialize app when user logged in
+            ------------------------ */
+            async function initializeTimelineApp() {
+                await loadEventsFromAPI();
+                applySavedBackground();      // load saved bg for this user (color or image)
+                createParticles();
+                updateTimeline();
+                updateStats();
+
+                // Filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.onclick = function() {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        state.currentFilter = this.dataset.filter;
+                        updateTimeline();
+                    };
+                });
+            }
+
+            /* ------------------------
+               Background: color picker and image upload
+            ------------------------ */
+            function resetToDefaultBackground() {
+                document.getElementById('timeline-app-section').style.backgroundImage = '';
+                document.getElementById('timeline-app-section').style.background = '';
+                bgColorPicker.value = '#ffffff';
+                if (state.currentUser) {
+                    localStorage.removeItem(bgKey(state.currentUser));
+                }
+                createSparkles(25); // Add sparkles when resetting to default
+                showNotification('Timeline background reset to default gradient.', 'success', 'Background Reset', '🎨');
+            }
+
+            function applyBackgroundColor() {
+                const color = bgColorPicker.value;
+                document.getElementById('timeline-app-section').style.backgroundImage = '';
+                document.getElementById('timeline-app-section').style.background = color;
+                if (state.currentUser) {
+                    localStorage.setItem(bgKey(state.currentUser), JSON.stringify({ type: 'color', value: color }));
+                }
+                createSparkles(20); // Add sparkles when applying color
+                showNotification('Timeline background color applied!', 'success', 'Color Applied', '🎨');
+            }
+
+            // Event listeners for background controls
+            resetBgColorBtn.addEventListener('click', resetToDefaultBackground);
+            applyBgColorBtn.addEventListener('click', applyBackgroundColor);
+
+            function applySavedBackground() {
+                if (!state.currentUser) return;
+                const raw = localStorage.getItem(bgKey(state.currentUser));
+                if (!raw) {
+                    // default gradient
+                    document.getElementById('timeline-app-section').style.background = '';
+                    document.getElementById('timeline-app-section').style.backgroundImage = '';
+                    return;
+                }
+                try {
+                    const bg = JSON.parse(raw);
+                    if (bg.type === 'color') {
+                        document.getElementById('timeline-app-section').style.backgroundImage = '';
+                        document.getElementById('timeline-app-section').style.background = bg.value;
+                        bgColorPicker.value = bg.value;
+                    } else if (bg.type === 'image') {
+                        document.getElementById('timeline-app-section').style.background = '';
+                        document.getElementById('timeline-app-section').style.backgroundImage = `url(${bg.value})`;
+                        document.getElementById('timeline-app-section').style.backgroundSize = 'cover';
+                    }
+                } catch (err) {
+                    console.error('Invalid background saved', err);
+                }
+            }
+
+            /* ------------------------
+               Add Event (with photo) - API Integration
+            ------------------------ */
+            addEventBtn.addEventListener('click', async () => {
+                const date = document.getElementById('eventDate').value;
+                const title = document.getElementById('eventTitle').value.trim();
+                const category = document.getElementById('eventCategory').value;
+                const description = document.getElementById('eventDescription').value.trim();
+                const reminder = document.getElementById('eventReminder').value;
+                const soundType = document.getElementById('soundType') ? document.getElementById('soundType').value : 'default';
+                let color = document.getElementById('eventColor') ? document.getElementById('eventColor').value : 'default';
+
+                // Validate required fields
+                if (!validateEventForm(date, title, category, description)) {
+                    return;
+                }
+
+                // photo (optional)
+                const file = eventPhotoInput.files && eventPhotoInput.files[0];
+                let photoData = null;
+                if (file) {
+                    try {
+                        photoData = await fileToDataUrl(file);
+                        showNotification('Photo attached successfully!', 'success', 'Photo Added', '📸');
+                    } catch (err) {
+                        console.error(err);
+                        showNotification('Failed to process photo.', 'error', 'Photo Error', '❌');
+                    }
+                }
+                
+                const time = document.getElementById('eventTime').value || "00:00:00";
+                const eventData = { 
+                    date, 
+                    time, 
+                    title, 
+                    category, 
+                    description, 
+                    reminder, 
+                    soundType,
+                    color, 
+                    photo: photoData, 
+                    triggered: false 
+                };
+                
+                try {
+                    if (state.editingEventId) {
+                        // Update existing event
+                        const updatedEvent = await updateEventInAPI(state.editingEventId, eventData);
+                        const index = state.events.findIndex(e => e._id === state.editingEventId);
+                        if (index !== -1) {
+                            state.events[index] = updatedEvent;
+                        }
+                        state.editingEventId = null;
+                        showNotification(
+                            `"${title}" has been updated.`,
+                            'success',
+                            'Event Updated!',
+                            '✏️'
+                        );
+                    } else {
+                        // Add new event
+                        const newEvent = await saveEventToAPI(eventData);
+                        state.events.push(newEvent);
+                        showNotification(
+                            `"${title}" has been added to your timeline${photoData ? ' with photo' : ''}.`,
+                            'success',
+                            'Event Added!',
+                            category === 'birthday' ? '🎂' : '📌'
+                        );
+                    }
+                    
+                    state.events.sort((a,b) => new Date(a.date) - new Date(b.date));
+                    updateTimeline();
+                    updateStats();
+                    clearForm();
+                } catch (error) {
+                    showNotification(
+                        error.message || 'Failed to save event. Please try again.',
+                        'error',
+                        'Save Error',
+                        '❌'
+                    );
+                }
+            });
+
+            // helper to convert file to data URL (returns Promise)
+            function fileToDataUrl(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('Failed to read file'));
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            /* ------------------------
+               Delete Event with Confirmation - API Integration
+            ------------------------ */
+            window.deleteEvent = function(index) {
+                showDeleteConfirmation(index);
+            };
+
+            function showDeleteConfirmation(index) {
+                const event = state.events[index];
+                const eventTitle = event.title;
+                const eventId = event._id;
+                
+                // Remove any existing confirmation modal
+                document.querySelectorAll('.confirmation-modal').forEach(m => m.remove());
+                
+                const confirmationModal = document.createElement('div');
+                confirmationModal.className = 'confirmation-modal';
+                confirmationModal.innerHTML = `
+                    <h3>🗑️ Delete Event</h3>
+                    <p>Are you sure you want to delete "<strong>${escapeHtml(eventTitle)}</strong>"?</p>
+                    <p style="color:#666; font-size:0.9rem; margin-top:8px;">This action cannot be undone.</p>
+                    <div class="confirmation-buttons">
+                        <button class="confirm-btn confirm-yes">Yes, Delete</button>
+                        <button class="confirm-btn confirm-no">Cancel</button>
+                    </div>
+                `;
+                
+                document.body.appendChild(confirmationModal);
+                
+                // Show overlay
+                overlay.style.display = 'block';
+                
+                // Add event listeners
+                confirmationModal.querySelector('.confirm-yes').addEventListener('click', async () => {
+                    try {
+                        await deleteEventFromAPI(eventId);
+                        state.events.splice(index, 1);
+                        updateTimeline();
+                        updateStats();
+                        overlay.style.display = 'none';
+                        confirmationModal.remove();
+                        showNotification(
+                            `"${eventTitle}" has been deleted from your timeline.`,
+                            'warning',
+                            'Event Deleted',
+                            '🗑️'
+                        );
+                    } catch (error) {
+                        showNotification(
+                            error.message || 'Failed to delete event. Please try again.',
+                            'error',
+                            'Delete Error',
+                            '❌'
+                        );
+                        overlay.style.display = 'none';
+                        confirmationModal.remove();
+                    }
+                });
+                
+                confirmationModal.querySelector('.confirm-no').addEventListener('click', () => {
+                    overlay.style.display = 'none';
+                    confirmationModal.remove();
+                });
+            }
+
+            /* ------------------------
+               Edit Event - API Integration
+            ------------------------ */
+            window.editEvent = function(index) {
+                const event = state.events[index];
+                state.editingEventId = event._id;
+                
+                // Populate form with event data
+                document.getElementById('eventDate').value = event.date;
+                document.getElementById('eventTime').value = event.time || '00:00:00';
+                document.getElementById('eventTitle').value = event.title;
+                document.getElementById('eventCategory').value = event.category;
+                document.getElementById('eventDescription').value = event.description;
+                document.getElementById('eventReminder').value = event.reminder;
+                
+                // Set sound type if available
+                if (event.sound_type && document.getElementById('soundType')) {
+                    document.getElementById('soundType').value = event.sound_type;
+                }
+                
+                // Show/hide sound options based on reminder
+                if (event.reminder === 'sound' || event.reminder === 'both') {
+                    soundTypeContainer.style.display = 'flex';
+                } else {
+                    soundTypeContainer.style.display = 'none';
+                }
+                
+                // Update button text
+                addEventBtn.textContent = '💾 Update Event';
+                
+                // Scroll to form
+                document.querySelector('.controls').scrollIntoView({ behavior: 'smooth' });
+                
+                showNotification(
+                    `Editing "${event.title}". Make your changes and click "Update Event".`,
+                    'info',
+                    'Editing Event',
+                    '✏️'
+                );
+            };
+
+            /* ------------------------
+               Clear Form & Generate Samples
+            ------------------------ */
+            clearFormBtn.addEventListener('click', () => {
+                clearForm();
+                showNotification('All form fields have been cleared.', 'info', 'Form Cleared', '🧹');
+            });
+
+            generateSampleBtn.addEventListener('click', async () => {
+                try {
+                    // Save sample events to API
+                    for (const event of sampleEvents) {
+                        await saveEventToAPI(event);
+                    }
+                    // Reload events from API
+                    await loadEventsFromAPI();
+                    updateTimeline();
+                    updateStats();
+                    showNotification(
+                        'Sample timeline events have been loaded. You can now explore the features!',
+                        'success',
+                        'Sample Events Loaded',
+                        '🎲'
+                    );
+                } catch (error) {
+                    showNotification(
+                        error.message || 'Failed to load sample events. Please try again.',
+                        'error',
+                        'Load Error',
+                        '❌'
+                    );
+                }
+            });
+
+            function clearForm() {
+                document.getElementById('eventDate').value = '';
+                document.getElementById('eventTime').value = '';
+                document.getElementById('eventTitle').value = '';
+                document.getElementById('eventCategory').value = '';
+                document.getElementById('eventDescription').value = '';
+                document.getElementById('eventReminder').value = 'none';
+                document.getElementById('eventPhoto').value = '';
+                soundTypeContainer.style.display = 'none';
+                state.editingEventId = null;
+                addEventBtn.textContent = '✨ Add Event';
+            }
+
+            /* ------------------------
+               Visualization
+            ------------------------ */
+            showVisualizationBtn.addEventListener('click', function() {
+                if (visualizationContainer.style.display === 'none') {
+                    visualizationContainer.style.display = 'block';
+                    this.textContent = '📊 Hide Visualization';
+                    updateVisualization();
+                } else {
+                    visualizationContainer.style.display = 'none';
+                    this.textContent = '📊 Show Visualization';
+                }
+            });
+
+            function updateVisualization() {
+                if (!chartBar) return;
+                
+                chartBar.innerHTML = '';
+                
+                // Count events by category
+                const categoryCounts = {
+                    work: 0,
+                    personal: 0,
+                    school: 0,
+                    milestone: 0,
+                    achievement: 0,
+                    innovation: 0,
+                    launch: 0,
+                    birthday: 0
+                };
+                
+                state.events.forEach(event => {
+                    if (categoryCounts.hasOwnProperty(event.category)) {
+                        categoryCounts[event.category]++;
+                    }
+                });
+                
+                // Find max count for scaling
+                const maxCount = Math.max(...Object.values(categoryCounts));
+                const maxHeight = 200; // pixels
+                
+                // Create bars for each category
+                Object.entries(categoryCounts).forEach(([category, count]) => {
+                    if (count === 0) return;
+                    
+                    const height = maxCount > 0 ? (count / maxCount) * maxHeight : 0;
+                    
+                    const column = document.createElement('div');
+                    column.className = 'chart-column';
+                    
+                    const value = document.createElement('div');
+                    value.className = 'chart-value';
+                    value.textContent = count;
+                    
+                    const bar = document.createElement('div');
+                    bar.className = 'chart-bar-fill';
+                    bar.style.height = `${height}px`;
+                    
+                    const label = document.createElement('div');
+                    label.className = 'chart-label';
+                    
+                    // Set appropriate emoji for each category
+                    const emojis = {
+                        work: '💼',
+                        personal: '👤',
+                        school: '🎓',
+                        milestone: '🎯',
+                        achievement: '🏆',
+                        innovation: '💡',
+                        launch: '🚀',
+                        birthday: '🎂'
+                    };
+                    
+                    label.textContent = emojis[category] || category;
+                    
+                    column.appendChild(value);
+                    column.appendChild(bar);
+                    column.appendChild(label);
+                    chartBar.appendChild(column);
+                });
+                
+                // Update timeline visualization
+                updateTimelineVisualization();
+            }
+
+            /* ------------------------
+               Timeline Visualization
+            ------------------------ */
+            function updateTimelineVisualization() {
+                // Clear existing timeline points
+                const existingPoints = timelineVisualization.querySelectorAll('.timeline-point');
+                existingPoints.forEach(point => point.remove());
+                
+                if (state.events.length === 0) return;
+                
+                // Get date range
+                const dates = state.events.map(event => new Date(event.date));
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                const dateRange = maxDate - minDate;
+                
+                // Create timeline points
+                state.events.forEach((event, index) => {
+                    const eventDate = new Date(event.date);
+                    const position = ((eventDate - minDate) / dateRange) * 100;
+                    
+                    const point = document.createElement('div');
+                    point.className = 'timeline-point';
+                    point.style.left = `${position}%`;
+                    point.dataset.index = index;
+                    
+                    // Color based on category
+                    const categoryColors = {
+                        work: '#667eea',
+                        personal: '#4ecdc4',
+                        school: '#ff6b6b',
+                        milestone: '#ffa726',
+                        achievement: '#ffeb3b',
+                        innovation: '#9c27b0',
+                        launch: '#f44336',
+                        birthday: '#e91e63'
+                    };
+                    
+                    point.style.background = categoryColors[event.category] || '#667eea';
+                    
+                    // Add enhanced hover tooltip with full event overview
+                    point.addEventListener('mouseenter', (e) => {
+                        const tooltip = timelineTooltip;
+                        const formattedDate = new Date(event.date).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        });
+                        const formattedTime = event.time && event.time !== '00:00:00' 
+                            ? new Date(`2000-01-01T${event.time}`).toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            })
+                            : '';
+                        
+                        const categoryEmojis = {
+                            work: '💼', personal: '👤', school: '🎓', milestone: '🎯',
+                            achievement: '🏆', innovation: '💡', discovery: '🔍',
+                            launch: '🚀', birthday: '🎂'
+                        };
+                        const emoji = categoryEmojis[event.category] || '📌';
+                        
+                        tooltip.innerHTML = `
+                            <strong class="tooltip-title">${escapeHtml(event.title)}</strong>
+                            <div class="tooltip-date">📅 ${formattedDate}${formattedTime ? ` at ${formattedTime}` : ''}</div>
+                            <div class="tooltip-category">${emoji} ${escapeHtml(event.category.charAt(0).toUpperCase() + event.category.slice(1))}</div>
+                            ${event.description ? `<div class="tooltip-description">${escapeHtml(event.description.length > 100 ? event.description.substring(0, 100) + '...' : event.description)}</div>` : ''}
+                            ${event.reminder !== 'none' ? `<div style="margin-top:8px; color:#667eea; font-size:0.75rem;">🔔 ${event.reminder === 'both' ? 'Popup + Sound' : event.reminder === 'popup' ? 'Popup' : 'Sound'}</div>` : ''}
+                        `;
+                        tooltip.style.left = `${Math.min(e.pageX + 10, window.innerWidth - 300)}px`;
+                        tooltip.style.top = `${Math.max(e.pageY - 10, 10)}px`;
+                        tooltip.classList.add('show');
+                    });
+                    
+                    point.addEventListener('mouseleave', () => {
+                        timelineTooltip.classList.remove('show');
+                    });
+                    
+                    // Add click event to highlight in timeline
+                    point.addEventListener('click', () => {
+                        // Remove active class from all points
+                        document.querySelectorAll('.timeline-point').forEach(p => p.classList.remove('active'));
+                        // Add active class to clicked point
+                        point.classList.add('active');
+                        
+                        // Find and highlight corresponding timeline item
+                        const timelineItems = document.querySelectorAll('.timeline-item');
+                        if (timelineItems[index]) {
+                            timelineItems[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            highlightEvent(timelineItems[index]);
+                        }
+                    });
+                    
+                    timelineVisualization.appendChild(point);
+                });
+            }
+
+            /* ------------------------
+               Timeline rendering & helpers
+            ------------------------ */
+            function updateTimeline() {
+                timeline.innerHTML = '';
+
+                const filteredEvents = state.currentFilter === 'all'
+                    ? state.events
+                    : state.events.filter(ev => ev.category === state.currentFilter);
+
+                filteredEvents.forEach((event, index) => {
+                    const originalIndex = state.events.indexOf(event);
+                    const eventElement = createEventElement(event, originalIndex);
+                    timeline.appendChild(eventElement);
+                });
+
+                // reveal animation
+                setTimeout(() => {
+                    document.querySelectorAll('.timeline-item').forEach((item, idx) => {
+                        setTimeout(() => item.classList.add('visible'), idx * 120);
+                    });
+                }, 80);
+                
+                // Update visualization if it's visible
+                if (visualizationContainer.style.display !== 'none') {
+                    updateVisualization();
+                }
+            }
+
+            function createEventElement(event, index) {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'timeline-item';
+
+                // date formatted
+                const formattedDate = new Date(event.date).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+                const categoryEmojis = { work:'💼', personal:'👤', school:'🎓', milestone:'🎯', achievement:'🏆', innovation:'💡', discovery:'🔍', launch:'🚀', birthday:'🎂' };
+                const colorThemes = {
+                    blue: 'linear-gradient(135deg,#667eea 0%, #764ba2 100%)',
+                    green: 'linear-gradient(135deg,#56ab2f 0%, #a8e6cf 100%)',
+                    purple: 'linear-gradient(135deg,#8e2de2 0%, #4a00e0 100%)',
+                    orange: 'linear-gradient(135deg,#f093fb 0%, #f5576c 100%)',
+                    red: 'linear-gradient(135deg,#ff6b6b 0%, #ee5a52 100%)',
+                    default: 'linear-gradient(135deg,#667eea 0%, #764ba2 100%)'
+                };
+
+                // derive border color — if a user uploaded a custom color string (hex), handle that
+                let borderColor = '#667eea';
+                if (event.color && event.color.startsWith && event.color.startsWith('#')) {
+                    borderColor = event.color;
+                } else if (colorThemes[event.color]) {
+                    // take second color from the gradient for border approximation
+                    const parts = colorThemes[event.color].split(',');
+                    borderColor = parts.length > 1 ? parts[1].replace(')', '').trim() : '#667eea';
+                }
+
+                const categoryName = event.category ? (event.category.charAt(0).toUpperCase()+event.category.slice(1)) : 'Event';
+                const emoji = categoryEmojis[event.category] || '📌';
+
+                // build inner markup
+                eventDiv.innerHTML = `
+                    <div class="timeline-content" style="border-left:5px solid ${borderColor}">
+                        <button class="edit-btn" data-index="${index}" title="Edit event">✏️</button>
+                        <button class="delete-btn" data-index="${index}" title="Delete event">🗑️</button>
+                        <div class="media">
+                            ${ event.photo ? `<img src="${event.photo}" alt="event photo" class="timeline-thumb">` : `<div style="width:84px;height:64px;border-radius:8px;background:linear-gradient(135deg,#f0f0f5,#e9eefc);display:flex;align-items:center;justify-content:center;color:#999;font-weight:700;border:1px solid rgba(0,0,0,0.03);">No<br/>Photo</div>` }
+                            <div class="timeline-main">
+                                <div class="timeline-date">${formattedDate}</div>
+                                <div class="timeline-title">${escapeHtml(event.title)}</div>
+                                <div class="timeline-description">${escapeHtml(event.description)}</div>
+                                <div class="timeline-category">${emoji} ${escapeHtml(categoryName)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // attach handlers
+                const content = eventDiv.querySelector('.timeline-content');
+                content.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('delete-btn') || e.target.classList.contains('edit-btn')) return;
+                    highlightEvent(eventDiv);
+                    if (event.reminder === 'popup' || event.reminder === 'both') showReminder(event);
+                    if (event.reminder === 'sound' || event.reminder === 'both') playSound(false, event.category === 'birthday');
+                });
+
+                // delete button wired to window.deleteEvent (global)
+                const delBtn = eventDiv.querySelector('.delete-btn');
+                delBtn.dataset.index = index; // ensure correct
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(e.currentTarget.dataset.index, 10);
+                    if (!Number.isNaN(idx)) window.deleteEvent(idx);
+                });
+
+                // edit button wired to window.editEvent (global)
+                const editBtn = eventDiv.querySelector('.edit-btn');
+                editBtn.dataset.index = index; // ensure correct
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const idx = parseInt(e.currentTarget.dataset.index, 10);
+                    if (!Number.isNaN(idx)) window.editEvent(idx);
+                });
+
+                return eventDiv;
+            }
+
+            /* ------------------------
+               Stats
+            ------------------------ */
+            function updateStats() {
+                document.getElementById('totalEvents').textContent = state.events.length;
+                document.getElementById('workCount').textContent = state.events.filter(e => e.category === 'work').length;
+                document.getElementById('personalCount').textContent = state.events.filter(e => e.category === 'personal').length;
+                document.getElementById('schoolCount').textContent = state.events.filter(e => e.category === 'school').length;
+                document.getElementById('birthdayCount').textContent = state.events.filter(e => e.category === 'birthday').length;
+            }
+
+            /* ------------------------
+               Highlight / Reminder / Sound
+            ------------------------ */
+            function highlightEvent(el) {
+                el.classList.add('animation-trigger');
+                setTimeout(()=> el.classList.remove('animation-trigger'), 700);
+            }
+
+            function showReminder(event) {
+                // remove any previous modal/overlay children we created manually
+                document.querySelectorAll('.reminder-modal, .overlay.generated').forEach(n => n.remove());
+
+                const reminderOverlay = document.createElement('div');
+                reminderOverlay.className = 'overlay generated';
+                reminderOverlay.style.display = 'block';
+
+                const modal = document.createElement('div');
+                modal.className = 'reminder-modal';
+                
+                let imageHtml = '';
+                if (event.photo) {
+                    imageHtml = `<img src="${event.photo}" alt="Event photo" class="reminder-modal-image">`;
+                }
+                
+                // Special message for birthdays
+                let birthdayMessage = '';
+                if (event.category === 'birthday') {
+                    birthdayMessage = '<p style="color:#ff6b6b; font-weight:bold; margin:10px 0;">🎉 Happy Birthday! 🎂</p>';
+                }
+                
+                modal.innerHTML = `
+                    ${imageHtml}
+                    <h3>🔔 Event Reminder</h3>
+                    <p><strong>${escapeHtml(event.title)}</strong></p>
+                    <p style="color:#666;">${escapeHtml(event.description)}</p>
+                    ${birthdayMessage}
+                    <div style="margin-top:14px;"><button class="modal-btn">Got it!</button></div>
+                `;
+
+                document.body.appendChild(reminderOverlay);
+                document.body.appendChild(modal);
+
+                function closeModal() {
+                    modal.remove(); reminderOverlay.remove();
+                }
+                modal.querySelector('.modal-btn').onclick = closeModal;
+                reminderOverlay.onclick = closeModal;
+            }
+
+            /* ------------------------
+               Reminder Auto-Trigger - API Integration
+            ------------------------ */
+            async function checkRemindersRealtime() {
+                const now = new Date();
+                const currentDate = now.toISOString().split("T")[0];  
+                const currentTime = now.toTimeString().split(" ")[0]; // HH:MM:SS  
+                
+                state.events.forEach(async (event) => {    
+                    // Ensure both date & time match    
+                    if (!event.triggered && event.date === currentDate && event.time === currentTime) {      
+                        if (event.reminder === "popup" || event.reminder === "both") {
+                            showReminder(event);
+                            systemNotification(
+                                event.category === 'birthday' ? "🎂 " + event.title : "🔔 " + event.title, 
+                                event.description,
+                                event.photo // Include event photo in notification if available
+                            );
+                        }
+                        if (event.reminder === "sound" || event.reminder === "both") {
+                            playSound(false, event.category === 'birthday');
+                        }
+                        
+                        // Special birthday notification
+                        if (event.category === 'birthday') {
+                            showNotification(
+                                `🎉 It's ${event.title}! Time to celebrate! 🎂`,
+                                'birthday',
+                                'Birthday Alert!',
+                                '🎂'
+                            );
+                        } else {
+                            showNotification(
+                                `Reminder triggered for "${event.title}"`,
+                                'reminder',
+                                'Reminder Alert!',
+                                '🔔'
+                            );
+                        }
+                        
+                        // Mark as triggered in API
+                        try {
+                            await updateEventInAPI(event._id, { triggered: true });
+                            event.triggered = true; // Update local state
+                        } catch (error) {
+                            console.error('Failed to update triggered status:', error);
+                            event.triggered = true; // Update local state anyway
+                        }
+                    }
+                });
+            }
+
+            /* ------------------------
+               Initial app start
+            ------------------------ */
+            function start() {
+                createParticles();
+                initializeTheme();
+                checkLoginStatus();
+                
+                // Register Service Worker for background notifications
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/static/service-worker.js')
+                        .then(registration => {
+                            console.log('Service Worker registered:', registration);
+                            // Send token to service worker
+                            if (state.token) {
+                                registration.active?.postMessage({
+                                    type: 'STORE_USER',
+                                    token: state.token
+                                });
+                            }
+                        })
+                        .catch(error => console.error('Service Worker registration failed:', error));
+                }
+                
+                // Start the real-time reminder checker
+                setInterval(checkRemindersRealtime, 1000);
+            }
+
+            // CTA button opens signup or app depending on status
+            ctaButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (state.currentUser) switchToAppView();
+                else showModal(signupModal);
+            });
+
+            // initial check on load
+            start();
+
+            // Expose update timeline/load globally if needed
+            window.updateTimeline = updateTimeline;
+            window.loadEventsFromAPI = loadEventsFromAPI;
+            
+        }); // DOMContentLoaded
+    </script>
+</body>
+</html>

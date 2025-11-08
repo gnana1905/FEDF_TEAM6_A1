@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create PWA Icons</title>
+</head>
+<body>
+    <canvas id="icon192" width="192" height="192" style="border: 2px solid #ccc; display: block; margin: 10px;"></canvas>
+    <canvas id="icon512" width="512" height="512" style="border: 2px solid #ccc; display: block; margin: 10px;"></canvas>
+    <button onclick="downloadIcons()" style="padding: 10px 20px; margin: 10px; font-size: 16px;">Download Icons</button>
+
+    <script>
+        function createIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(0.5, '#764ba2');
+            gradient.addColorStop(1, '#f093fb');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.3}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('CF', size / 2, size / 2);
+        }
+        
+        function downloadCanvas(canvas, filename) {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        function downloadIcons() {
+            const canvas192 = document.getElementById('icon192');
+            const canvas512 = document.getElementById('icon512');
+            downloadCanvas(canvas192, 'icon-192.png');
+            setTimeout(() => downloadCanvas(canvas512, 'icon-512.png'), 500);
+            alert('Icons downloaded! Move them to the project root directory.');
+        }
+        
+        // Create icons on load
+        window.onload = function() {
+            createIcon('icon192', 192);
+            createIcon('icon512', 512);
+        };
+    </script>
+</body>
+</html>
+
