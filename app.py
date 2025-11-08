@@ -610,10 +610,4 @@ if __name__ == '__main__':
     print(f"Upload Folder: {Config.UPLOAD_FOLDER}")
     print("="*50 + "\n")
     
-<<<<<<< HEAD
-=======
-    # Start background thread
-    start_background_checker()
-    
->>>>>>> 3b5c3a20a4b9d96409cbcc9b474677add1e4927f
     app.run(debug=Config.DEBUG, host=Config.HOST, port=Config.PORT)
